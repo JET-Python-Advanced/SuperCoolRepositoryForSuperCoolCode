@@ -9,13 +9,13 @@ Dieses Repository enthält sämtliche Unterlagen, die im Laufe des Kurses bereit
 - **slides/**  
   Präsentationen und Folien als PDF.
 
-- **data/**
+- **data/**  
   Übungsdaten für das fortlaufende Beispiel
   
-- **exercises/**
+- **exercises/**  
   Wöchentliche Übungsblätter (freiwillig)
   
-- **exercises/solutions/**
+- **exercises/solutions/**  
   Musterlösungen zu den Übungsblättern
 
 ## Wie Sie dieses Repository verwenden
@@ -27,8 +27,8 @@ Dieses Repository enthält sämtliche Unterlagen, die im Laufe des Kurses bereit
 
 - Die Übungsblätter sind freiwillig und werden nicht abgegeben bzw. bewertet.
 - Jedes Übungsblatt besteht aus zwei Teilen:
--   Teil A: Kleinere Aufgaben zu den aktuellen Themen
--   Teil B: Medienbibliothek: fortlaufendes Projekt, welches über den gesamten Kurs hinweg wächst
+  - Teil A: Kleinere Aufgaben zu den aktuellen Themen
+  - Teil B: Medienbibliothek: fortlaufendes Projekt, welches über den gesamten Kurs hinweg wächst
 - Die Musterlösungen lade ich immer kurz vor der Folgeeinheit hoch. Zu Beginn jeder Einheit besprechen wir diese kurz.
 
 ## Hinweise
