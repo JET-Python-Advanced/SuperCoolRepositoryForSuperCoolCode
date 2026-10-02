@@ -216,3 +216,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Erzeugte Daten
+data/collection/
+data/*.tsv
+data/*.tsv.gz
+report*.xlsx

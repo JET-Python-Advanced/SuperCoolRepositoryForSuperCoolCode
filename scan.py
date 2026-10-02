@@ -1,14 +1,4 @@
-"""Medienbibliothek — der Anfang.
-
-Ueber zwoelf Einheiten wird daraus ein Werkzeug, das einen Ordner mit
-Filmdateien einliest, Titel und Jahr erkennt, Zusatzinformationen holt
-und einen Bericht schreibt.
-
-Einheit 1: Wir arbeiten noch mit dieser festen Liste.
-Einheit 2: Statt der Liste wird ein echter Ordner eingelesen.
-"""
-
-DATEIEN = [
+FILES = [
     "Alien_1979_1080p.mkv",
     "Heat_1995_720p.mkv",
     "Fargo_1996.mp4",
@@ -28,7 +18,7 @@ DATEIEN = [
 
 
 # ---------------------------------------------------------------------
-# Ab hier: Uebungsblatt 1, Teil B
+# From here on: worksheet 1, part B
 # ---------------------------------------------------------------------
 
-print(len(DATEIEN), "Dateien in der Liste")
+print(len(FILES), "files in the list")
