@@ -1,7 +1,5 @@
 # Übungsblatt 2 — Git
 
-  
-
 **Python Advanced · Einheit 2 · Freitag, 09.10.2026**
 
 ---
