@@ -146,9 +146,7 @@ Achtung: `pycodestyle` prüft keine Namen. Eine der sechs Stellen findet es also
 **A3.1** Schreiben Sie eine Funktion `longer_than(words, min_length=4)`, die zählt, wie viele Wörter mindestens so lang sind wie angegeben. Der zweite Parameter soll weggelassen werden können.
 
 ```python
-longer_than(["Haus", "Tor", "Fenster"])        
-# Output:
-def  
+longer_than(["Haus", "Tor", "Fenster"])        # Output: 2
 longer_than(["Haus", "Tor", "Fenster"], 6)     # Output: 1
 ```
 

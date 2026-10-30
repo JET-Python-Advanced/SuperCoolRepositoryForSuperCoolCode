@@ -1,13 +1,3 @@
-"""Media library — the beginning.
-
-Over twelve units this grows into a tool that reads a folder of movie
-files, recognises title and year, fetches additional information and
-writes a report.
-
-Unit 1: we still work with this fixed list.
-Unit 2: the list is replaced by a real folder.
-"""
-
 FILES = [
     "Alien_1979_1080p.mkv",
     "Heat_1995_720p.mkv",
