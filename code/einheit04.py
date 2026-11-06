@@ -1090,6 +1090,441 @@ def a_3_5():
     print("  get beim Nachsehen in einer fertigen.")
 
 # ======================================================================
+#  4  EAFP gegen LBYL
+#
+#  Zwei Haltungen zum Fehler: erst fragen, oder gleich versuchen.
+#  Python bevorzugt die zweite. Das Kapitel zeigt beide Gründe -
+#  einen gemessenen und einen grundsätzlichen.
+# ======================================================================
+
+@abschnitt("4.1", "Die beiden Haltungen")
+def a_4_1():
+    """Dieselbe Aufgabe zweimal: erst fragen, oder gleich
+    versuchen und den Fehler behandeln.
+    """
+    # ein Dictionary mit genau einem Eintrag - 'Heat' fehlt
+    d = {"Alien": 117}
+    kopf("LBYL - look before you leap: erst fragen, dann zugreifen")
+    if "Heat" in d:   # erst fragen, ob der Schlüssel da ist
+        minuten = d["Heat"]   # und nur dann zugreifen
+    else:
+        minuten = 0   # sonst der Ersatzwert
+    print("    minuten =", minuten)   # -> 0
+
+    kopf("EAFP - easier to ask forgiveness: zugreifen, Fehler behandeln")
+    try:   # hier wird ohne Prüfung zugegriffen
+        minuten = d["Heat"]   # das schlägt fehl, weil 'Heat' nicht da ist
+    except KeyError:   # und genau dieser Fehler wird aufgefangen
+        minuten = 0   # derselbe Ersatzwert wie oben
+    print("    minuten =", minuten)   # -> 0   dasselbe Ergebnis, anderer Weg
+    print()
+    print("  Beide liefern dasselbe. Python bevorzugt die zweite Form -")
+    print("  aus zwei Gründen, die die nächsten Abschnitte zeigen.")
+
+
+@abschnitt("4.2", "Das Kostenargument, nachgemessen")
+def a_4_2():
+    """Gemessen statt behauptet: was ein try wirklich kostet."""
+    # timeit führt ein Codestück sehr oft aus und misst die Zeit
+    import timeit
+
+    # wird vor jeder Messung einmal ausgeführt, zählt nicht mit
+    aufbau = "d = {'Alien': 117}"
+    # drei Fälle, je als Beschriftung und als Code in Textform.
+    # timeit bekommt den Code als Zeichenkette, darum \n für
+    # die Zeilenumbrüche.
+    faelle = [
+        ("LBYL, Schlüssel da",
+         "if 'Alien' in d:\n    x = d['Alien']\nelse:\n    x = 0"),
+        ("EAFP, Schlüssel da",
+         "try:\n    x = d['Alien']\nexcept KeyError:\n    x = 0"),
+        ("EAFP, Schlüssel fehlt",
+         "try:\n    x = d['Heat']\nexcept KeyError:\n    x = 0"),
+    ]
+    print("  je 1.000.000 Durchläufe:")
+    for name, code in faelle:   # die drei Fälle der Reihe nach messen
+        # eine Million Durchläufe je Fall
+        dauer = timeit.timeit(code, setup=aufbau, number=1_000_000)
+        # -> etwa 0,06 s / 0,04 s / 0,2 s.
+        # Die ersten beiden liegen gleichauf, der dritte ist deutlich
+        # teurer: Nur dort wird wirklich eine Ausnahme ausgelöst.
+        print(f"    {name:<24} {dauer:6.3f} s")
+    print()
+    print("  Zu lesen ist das so: Solange nichts schiefgeht, kostet try")
+    print("  fast nichts. Erst das tatsächliche Auslesen einer Exception")
+    print("  ist teuer. EAFP lohnt sich also, wenn der Fehlerfall selten")
+    print("  ist - und das ist der Normalfall.")
+
+
+@abschnitt("4.3", "Das zweite Argument: die Lücke")
+def a_4_3():
+    """Der stärkere Grund: zwischen Prüfung und Zugriff liegt in der
+    Zeit. Die Lücke wird hier absichtlich aufgerissen.
+    """
+    # legt den temporären Ordner samt Beispielsammlung an
+    with arbeitsordner():
+        # relativer Pfad - er wirkt im Ordner, in den wir gewechselt sind
+        pfad = Path("data/collection/notizen.txt")
+        print("  LBYL hat eine Lücke zwischen Prüfung und Zugriff:")
+        print("      if pfad.exists():")
+        print("          text = pfad.read_text(encoding='utf-8')")
+        print("  Zwischen den beiden Zeilen kann die Datei verschwinden -")
+        print("  ein anderer Prozess, ein Netzlaufwerk, ein Virenscanner.")
+        print()
+        print("  EAFP hat sie nicht:")
+        try:   # zugreifen, ohne vorher zu fragen
+            # das gelingt hier, die Datei ist da
+            text = pfad.read_text(encoding="utf-8")
+        except FileNotFoundError:   # dieser Zweig bliebe für den Fehlerfall
+            text = ""
+        print("      ", repr(text))   # -> 'nur ein Hinweis\n'
+        print()
+        print("  Vorgeführt: wir löschen die Datei zwischen Prüfung")
+        print("  und Zugriff - genau die Lücke.")
+        if pfad.exists():   # jetzt die Lücke vorführen: erst fragen ...
+            # ... dann verschwindet die Datei (hier von uns selbst) ...
+            pfad.unlink()
+            # ... und der Zugriff danach scheitert, obwohl die Prüfung
+            # gerade noch zugestimmt hatte
+            with erwarte(FileNotFoundError):
+                # -> FileNotFoundError: [Errno 2] No such file or directory
+                pfad.read_text(encoding="utf-8")
+
+@abschnitt("4.4", "Wann keins von beidem")
+def a_4_4():
+    """Oft braucht es gar keine Fallunterscheidung - sie ist
+    in der Standardbibliothek schon eingebaut.
+    """
+    laufzeit = {"Alien": 117}   # ein Eintrag, 'Fargo' fehlt
+    print("  Oft braucht es keine Fallunterscheidung, weil die")
+    print("  Standardbibliothek sie schon eingebaut hat:")
+    # -> 0   get erledigt die Fallunterscheidung schon selbst
+    print("      laufzeit.get('Fargo', 0) ->", laufzeit.get("Fargo", 0))
+    print()
+    print("  Weitere Beispiele derselben Art:")
+    print("      pfad.unlink(missing_ok=True)")
+    print("      ordner.mkdir(parents=True, exist_ok=True)")
+    print("      naechster = next(quelle, None)")
+    print("      int(text) if text.isdigit() else 0")
+    print()
+    print("  Die beste Fehlerbehandlung ist die, die gar nicht")
+    print("  geschrieben werden muss.")
+
+# ======================================================================
+#  5  Exceptions, eigene Exceptions, raise from
+#
+#  Wie Exceptions zusammenhängen, wie man sie richtig fängt und
+#  wie man eigene baut. Die beiden Fallen stehen in 5.2
+#  (Reihenfolge der Zweige) und 5.4 (return im finally).
+# ======================================================================
+
+# die eigene Basisklasse: alles, was aus unserem Code kommt
+class MediathekFehler(Exception):
+    """Fehler, die aus unserem Code stammen."""
+
+
+# davon abgeleitet, für einen bestimmten Fall
+class UnlesbarerName(MediathekFehler):
+    """Ein Dateiname passt nicht zum erwarteten Muster."""
+
+
+@abschnitt("5.1", "Die Hierarchie")
+def a_5_1():
+    """Die Vererbungskette der Exceptions, mit __mro__ nachgesehen.
+
+    Wichtigster Punkt: KeyboardInterrupt hängt nicht unter
+    Exception.
+    """
+    kopf("Nicht alles hängt unter Exception")
+    print("KeyboardInterrupt.__mro__")
+    # -> (KeyboardInterrupt, BaseException, object).
+    # __mro__ ist die Vererbungskette von unten nach oben.
+    # Exception kommt darin nicht vor - deshalb fängt
+    # 'except Exception' kein Strg+C.
+    print("    ", KeyboardInterrupt.__mro__)
+    print("    -> KeyboardInterrupt hängt direkt unter BaseException.")
+    print("       'except Exception' fängt es also NICHT - und genau")
+    print("       das ist gewollt: Strg+C soll durchkommen.")
+    # -> dieselbe kurze Kette, aus demselben Grund
+    print("Dasselbe gilt für SystemExit:", SystemExit.__mro__)
+
+    kopf("Die Zwischenklassen sind das Nützliche daran")
+    # zwei Fälle: ein fehlender Schlüssel, ein zu grosser Index
+    for schluessel, sammlung in [("x", {"a": 1}), (5, [1, 2])]:
+        try:
+            # das scheitert - einmal mit KeyError, einmal mit IndexError
+            sammlung[schluessel]
+        # LookupError ist die gemeinsame Oberklasse der beiden
+        except LookupError as fehler:
+            # -> KeyError und IndexError, beide im selben Zweig gefangen
+            print(f"    {type(fehler).__name__:<11} von LookupError gefangen")
+    # -> True   nachgesehen statt geraten
+    print("    issubclass(KeyError, LookupError)  ",
+          issubclass(KeyError, LookupError))
+    # -> True   auch IndexError hängt darunter
+    print("    issubclass(IndexError, LookupError)",
+          issubclass(IndexError, LookupError))
+
+    kopf("OSError trägt Zusatzangaben")
+    try:
+        open("gibtsnicht")   # eine Datei, die es nicht gibt
+    # FileNotFoundError ist eine Unterklasse von OSError
+    except OSError as fehler:
+        # -> FileNotFoundError  der genaue Typ
+        print("    typ      ", type(fehler).__name__)
+        # -> 2   die Fehlernummer des Betriebssystems
+        print("    errno    ", fehler.errno)
+        # -> gibtsnicht  welche Datei gemeint war
+        print("    filename ", fehler.filename)
+        # -> No such file or directory  der Text dazu
+        print("    strerror ", fehler.strerror)
+
+    kopf("Nachsehen statt raten")
+    print("FileNotFoundError.__mro__")
+    # -> (FileNotFoundError, OSError, Exception, BaseException, object)
+    print("    ", FileNotFoundError.__mro__)
+    print("  Das ist der Weg, eine unbekannte Exception einzuordnen:")
+    print("  __mro__ zeigt die Kette bis object.")
+
+@abschnitt("5.2", "Mehrere Typen und die Reihenfolge")
+def a_5_2():
+    """Reihenfolge der Zweige, mehrere Typen in einem Zweig,
+    und was in einer gefangenen Exception steckt.
+    """
+    kopf("Die Zweige werden von oben nach unten geprüft")
+    try:
+        raise KeyError("k")   # wir lösen den Fehler selbst aus
+    except KeyError:   # der passende Zweig steht oben
+        print("    KeyError-Zweig greift")   # -> dieser hier greift
+    except Exception:   # KeyError ist zwar auch eine Exception,
+        # aber der erste passende Zweig gewinnt - hier kommt nichts an
+        print("    dieser Zweig wird nie erreicht")
+    print("  Der allgemeinste Zweig gehört also nach unten. Steht")
+    print("  'except Exception' oben, kommt nichts anderes mehr dran.")
+
+    kopf("Mehrere Typen in einem Zweig")
+    # drei Werte: einer geht, zwei gehen schief
+    for teil in ["1979", "keine Zahl", None]:
+        try:
+            # int() auf 'keine Zahl' und auf None scheitert verschieden
+            jahr = int(teil)
+        # ein Zweig für beide Typen - das Tupel macht es möglich
+        except (TypeError, ValueError) as fehler:
+            jahr = 0   # gemeinsamer Ersatzwert
+            # -> 'keine Zahl' mit ValueError, None mit TypeError
+            print(f"    {str(teil):<12} -> {jahr}  "
+                  f"({type(fehler).__name__})")
+        else:   # else läuft nur, wenn nichts geworfen wurde
+            print(f"    {str(teil):<12} -> {jahr}")   # -> 1979 -> 1979
+
+    kopf("Was in der gefangenen Exception steckt")
+    try:
+        raise ValueError("kein Jahr")   # eine Exception mit einer Meldung
+    except ValueError as fehler:
+        # -> 'kein Jahr'  str() liefert die Meldung
+        print("    str(fehler) ", repr(str(fehler)))
+        # -> ('kein Jahr',)  args enthält alle Argumente als Tupel
+        print("    fehler.args ", fehler.args)
+    # OSError nimmt drei Argumente entgegen
+    fehler = OSError(2, "kein Zugriff", "datei.txt")
+    # -> (2, 'kein Zugriff')  der Dateiname fehlt hier!
+    print("    args        ", fehler.args,
+          "  - filename steht nicht drin")
+    # -> "[Errno 2] kein Zugriff: 'datei.txt'"  str() nennt ihn aber
+    print("    str()       ", repr(str(fehler)))
+    # -> 'datei.txt'  und er steht in einem eigenen Attribut
+    print("    filename    ", repr(fehler.filename))
+
+    kopf("Der Name gilt nur im Zweig")
+    gemerkt = None   # ein Name ausserhalb des Zweiges, zum Umspeichern
+    try:
+        raise ValueError("weg nach dem Zweig")
+    # fehler gilt nur innerhalb dieses Zweiges ...
+    except ValueError as fehler:
+        gemerkt = fehler   # ... deshalb retten wir ihn hier hinaus
+    # -> False  Python räumt den Namen am Ende des Zweiges weg
+    print("    'fehler' nach dem Zweig:", "fehler" in dir())
+    # -> 'weg nach dem Zweig'  über die Kopie geht es noch
+    print("    deshalb vorher umspeichern:", repr(str(gemerkt)))
+
+@abschnitt("5.3", "Der Umfang des try-Blocks")
+def a_5_3():
+    """try, except, else und finally.
+    """
+    with arbeitsordner():   # temporärer Ordner mit der Beispielsammlung
+        def vorfuehrung(pfad):
+            try:
+                # nur diese eine Zeile kann scheitern - und nur sie steht im
+                # try
+                datei = open(pfad, encoding="utf-8")
+            except FileNotFoundError:   # der Fehlerfall
+                print("    except:  fehlt")   # -> bei der fehlenden Datei
+            else:   # else: läuft nur, wenn das open gelungen ist
+                # -> bei der vorhandenen Datei, 16 Zeichen
+                print("    else:    gelesen,", len(datei.read()), "Zeichen")
+                datei.close()   # schliessen gehört zum Erfolgsfall
+            finally:   # finally: läuft in beiden Fällen
+                # -> erscheint zweimal, einmal je Aufruf
+                print("    finally: aufgeräumt")
+
+        print("  vorhandene Datei:")
+        # erster Aufruf: die Datei ist da
+        vorfuehrung("data/collection/notizen.txt")
+        print("  fehlende Datei:")
+        vorfuehrung("gibtsnicht.txt")   # zweiter Aufruf: die Datei fehlt
+        print()
+        print("  else läuft nur im Erfolgsfall, finally immer. Dadurch")
+        print("  bleibt im try-Block genau die Zeile stehen, die scheitern")
+        print("  kann - und nichts sonst.")
+
+@abschnitt("5.4", "Die finally-Falle")
+def a_5_4():
+    """Ein return im finally verschluckt die Ausnahme spurlos."""
+    def schluckt():
+        try:
+            # hier wird eine Ausnahme ausgelöst ...
+            raise ValueError("geht verloren")
+        finally:
+            # ... und dieses return macht sie spurlos zunichte.
+            # Der Rückgabewert ersetzt die Ausnahme vollständig.
+            return "return im finally"   # genau das ist die Falle
+
+    # -> 'return im finally'  von der ValueError keine Spur
+    print("    schluckt() ->", repr(schluckt()))
+    print("    Die ValueError ist weg. Kein Hinweis, keine Spur.")
+    print()
+    print("  Dasselbe gilt für break und continue in einem finally.")
+    print("  Regel: in finally nur aufräumen, nie den Ablauf steuern.")
+
+    kopf("So gehört es geschrieben")
+
+    def sauber():
+        try:
+            raise ValueError("kommt durch")   # dieselbe Ausnahme wie oben,
+        finally:
+            # aber das finally räumt nur auf, statt zurückzugeben
+            print("    finally: aufgeräumt")
+
+    with erwarte(ValueError):   # und deshalb kommt sie diesmal durch
+        sauber()   # -> ValueError: kommt durch
+
+@abschnitt("5.5", "Eigene Ausnahmen")
+def a_5_5():
+    """Eine eigene Basisklasse je Projekt, davon alles Weitere."""
+    print("  Eine eigene Basisklasse je Projekt, davon alles Weitere:")
+    print("      class MediathekFehler(Exception): ...")
+    print("      class UnlesbarerName(MediathekFehler): ...")
+    print()
+    print("  MediathekFehler.__mro__")
+    # -> (UnlesbarerName, MediathekFehler, Exception, BaseException, object)
+    print("    ", UnlesbarerName.__mro__)
+    print()
+    print("  Der Gewinn: Wer unseren Code benutzt, kann mit einem")
+    print("  'except MediathekFehler' alles abfangen, was aus unserem")
+    print("  Code kommt.")
+    try:
+        # wir lösen die eigene Ausnahme aus,
+        raise UnlesbarerName("Alien.mkv: kein Jahr im Namen")
+    # fangen sie aber über die Basisklasse - das ist der Gewinn
+    except MediathekFehler as fehler:
+        # -> gefangen: UnlesbarerName - Alien.mkv: kein Jahr im Namen
+        print("    gefangen:", type(fehler).__name__, "-", fehler)
+
+
+@abschnitt("5.6", "raise ... from ...")
+def a_5_6():
+    """Mit from, ohne from und from None - drei verschiedene
+    Tracebacks für denselben Fehler.
+    """
+    kopf("Mit from: die Ursache ist gewollt und benannt")
+
+    def jahr_lesen(teil):
+        try:
+            return int(teil)   # das scheitert bei 'keine Zahl'
+        # die ursprüngliche Ausnahme steht als fehler bereit
+        except ValueError as fehler:
+            # from fehler hängt sie als Ursache an die neue an
+            raise UnlesbarerName(f"kein Jahr: {teil}") from fehler
+
+    try:
+        jahr_lesen("keine Zahl")   # Aufruf mit einem Wert, der keine Zahl ist
+    except UnlesbarerName as fehler:
+        # -> ValueError(...)  die Ursache ist festgehalten
+        print("    __cause__           ", repr(fehler.__cause__))
+        # -> dieselbe ValueError  __context__ wird immer gesetzt
+        print("    __context__         ", repr(fehler.__context__))
+        # -> True   das from unterdrückt die zweite Darstellung
+        print("    __suppress_context__", fehler.__suppress_context__)
+        print("    Traceback-Text: 'The above exception was the direct")
+        print("    cause of the following exception'")
+
+    kopf("Ohne from: Python merkt sich die Ursache trotzdem")
+
+    def ohne_from(teil):
+        try:
+            return int(teil)   # dieselbe Stelle, die scheitert
+        except ValueError:   # diesmal ohne as und ohne from
+            # die neue Ausnahme kennt die Ursache nicht ausdrücklich
+            raise UnlesbarerName(f"kein Jahr: {teil}")
+
+    try:
+        ohne_from("keine Zahl")
+    except UnlesbarerName as fehler:
+        # -> None   __cause__ bleibt leer
+        print("    __cause__           ", repr(fehler.__cause__))
+        # -> ValueError(...)  aber __context__ merkt es sich trotzdem
+        print("    __context__         ", repr(fehler.__context__))
+        print("    Traceback-Text: 'During handling of the above")
+        print("    exception, another exception occurred' - klingt wie")
+        print("    ein zweiter Fehler, nicht wie eine Umwandlung.")
+
+    kopf("from None: die Ursache gehört niemanden an")
+
+    def mit_none(schluessel):
+        speicher = {}
+        try:
+            # ein leeres Dictionary - der Zugriff scheitert
+            return speicher[schluessel]
+        except KeyError:
+            # from None verschweigt die Ursache absichtlich
+            raise UnlesbarerName(f"unbekannt: {schluessel}") from None
+
+    try:
+        mit_none("Alien")
+    except UnlesbarerName as fehler:
+        # -> None   keine Ursache angegeben
+        print("    __cause__           ", repr(fehler.__cause__))
+        # -> KeyError('Alien')  intern noch da ...
+        print("    __context__         ", repr(fehler.__context__))
+        # -> True   ... wird aber nicht mehr angezeigt
+        print("    __suppress_context__", fehler.__suppress_context__)
+        print("    Der Traceback zeigt nur noch unsere Ausnahme. Richtig,")
+        print("    wenn der innere Fehler ein Umsetzungsdetail ist.")
+
+@abschnitt("5.7", "Weiterreichen mit nacktem raise")
+def a_5_7():
+    """raise ohne Argument reicht die Exception samt Spur weiter."""
+    def jahr_lesen(teil):
+        try:
+            return int(teil)   # das scheitert
+        except ValueError:
+            # wir schreiben mit, was passiert ist ...
+            print("    Warnung protokolliert: Jahr nicht lesbar:", teil)
+            # ... und reichen dieselbe Ausnahme unverändert weiter.
+            # Ohne Argument behält sie ihren vollständigen Traceback.
+            raise
+
+    print("  Mitschreiben, aber nicht behandeln:")
+    with erwarte(ValueError):
+        # -> ValueError: invalid literal for int() with base 10
+        jahr_lesen("keine Zahl")
+    print()
+    print("  'raise' ohne Argument reicht genau die Ausnahme weiter, die")
+    print("  gerade behandelt wird - samt vollständigem Traceback.")
+    print("  'raise fehler' würde den Traceback an dieser Stelle neu")
+    print("  beginnen lassen und die Spur verkürzen.")
+
+# ======================================================================
 #  ABLAUFSTEUERUNG
 #
 #  Der Teil, der entscheidet, welche Abschnitte laufen.
